@@ -28,14 +28,16 @@ type RawSuggestionRow = {
 async function getVotedIds(userId: string | null): Promise<Set<string>> {
   if (!userId) return new Set();
   const supabase = await createClient();
-  const { data } = await supabase.from("votes").select("suggestion_id").eq("user_id", userId);
+  const { data, error } = await supabase.from("votes").select("suggestion_id").eq("user_id", userId);
+  if (error) console.error("getVotedIds failed:", error);
   return new Set((data ?? []).map((row) => row.suggestion_id));
 }
 
 async function getSubscribedIds(userId: string | null): Promise<Set<string>> {
   if (!userId) return new Set();
   const supabase = await createClient();
-  const { data } = await supabase.from("subscriptions").select("suggestion_id").eq("user_id", userId);
+  const { data, error } = await supabase.from("subscriptions").select("suggestion_id").eq("user_id", userId);
+  if (error) console.error("getSubscribedIds failed:", error);
   return new Set((data ?? []).map((row) => row.suggestion_id));
 }
 
@@ -88,12 +90,13 @@ export async function getSuggestions({
       ? query.order("created_at", { ascending: false })
       : query.order("vote_count", { ascending: false });
 
-  const [{ data }, votedIds, subscribedIds] = await Promise.all([
+  const [{ data, error }, votedIds, subscribedIds] = await Promise.all([
     query,
     getVotedIds(currentUserId),
     getSubscribedIds(currentUserId),
   ]);
 
+  if (error) console.error("getSuggestions failed:", error);
   return ((data as RawSuggestionRow[] | null) ?? []).map((row) =>
     toSuggestion(row, votedIds, subscribedIds),
   );
@@ -104,33 +107,36 @@ export async function getSuggestion(
   currentUserId: string | null,
 ): Promise<Suggestion | null> {
   const supabase = await createClient();
-  const [{ data }, votedIds, subscribedIds] = await Promise.all([
+  const [{ data, error }, votedIds, subscribedIds] = await Promise.all([
     supabase.from("suggestions").select(SUGGESTION_SELECT).eq("id", id).single(),
     getVotedIds(currentUserId),
     getSubscribedIds(currentUserId),
   ]);
 
+  if (error) console.error("getSuggestion failed:", error);
   if (!data) return null;
   return toSuggestion(data as RawSuggestionRow, votedIds, subscribedIds);
 }
 
 export async function getComments(suggestionId: string): Promise<Comment[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("comments")
     .select("id, suggestion_id, body, created_at, edited_at, author:profiles(id, display_name, avatar_url, is_admin)")
     .eq("suggestion_id", suggestionId)
     .order("created_at", { ascending: true });
 
+  if (error) console.error("getComments failed:", error);
   return (data as Comment[] | null) ?? [];
 }
 
 export async function getSuggestionTypes(): Promise<SuggestionType[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("suggestion_types")
     .select("id, name, color, sort_order")
     .order("sort_order", { ascending: true });
 
+  if (error) console.error("getSuggestionTypes failed:", error);
   return data ?? [];
 }

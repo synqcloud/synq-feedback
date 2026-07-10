@@ -165,11 +165,12 @@ export function CommentList({
 
           let author = profileCache.current.get(row.author_id) ?? null;
           if (!author) {
-            const { data } = await supabase
+            const { data, error } = await supabase
               .from("profiles")
               .select("id, display_name, avatar_url, is_admin")
               .eq("id", row.author_id)
               .single();
+            if (error) console.error("fetch comment author failed:", error);
             author = data;
             profileCache.current.set(row.author_id, author);
           }

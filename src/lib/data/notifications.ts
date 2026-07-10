@@ -11,12 +11,13 @@ const NOTIFICATION_SELECT = `
 
 export async function getNotifications(userId: string, limit = 20): Promise<Notification[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("notifications")
     .select(NOTIFICATION_SELECT)
     .eq("recipient_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
 
+  if (error) console.error("getNotifications failed:", error);
   return (data as Notification[] | null) ?? [];
 }

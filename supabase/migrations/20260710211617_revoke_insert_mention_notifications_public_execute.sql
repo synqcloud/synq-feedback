@@ -1,0 +1,21 @@
+-- insert_mention_notifications is SECURITY DEFINER (needs to bypass RLS to
+-- notify users other than the caller) and takes arbitrary p_actor_id/
+-- p_suggestion_id/p_comment_id with no internal auth check. Supabase grants
+-- EXECUTE directly to anon/authenticated (not just PUBLIC) on every new
+-- public-schema function by default, and PostgREST exposes any such
+-- function as a callable RPC endpoint -- which made this one callable by a
+-- fully anonymous request to forge arbitrary "X mentioned you" notifications
+-- from any actor to any recipient. Confirmed exploitable against local
+-- before this fix (unauthenticated curl to
+-- /rest/v1/rpc/insert_mention_notifications successfully inserted a forged
+-- notification row); confirmed blocked (401) after.
+--
+-- Revoking from just PUBLIC is not enough here since anon/authenticated hold
+-- their own direct grants -- both must be revoked explicitly. service_role
+-- keeps EXECUTE (trusted server-only key, never exposed to clients).
+--
+-- The only real callers (notify_mentioned_users_suggestion/_comment) are
+-- themselves SECURITY DEFINER triggers owned by the migration role, so they
+-- keep working after this revoke -- only direct external RPC calls are cut
+-- off.
+revoke execute on function public.insert_mention_notifications(jsonb, uuid, uuid, uuid) from anon, authenticated;

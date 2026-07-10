@@ -1,26 +1,236 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Light mode only -- tells the browser not to auto-darken native form
+     controls/scrollbars when the OS is in dark mode. */
+  color-scheme: light;
+
+  /* Page canvas the nav and content cards float on. Cards use --color-surface,
+     which is lighter than this. Light mode only -- no dark mode. */
+  --color-bg: #ececf0;
+  --color-bg-inset: #e2e3e8;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f6f7f8;
+  --color-border: #e6e7e9;
+  --color-border-strong: #d4d6d9;
+  --color-fg: #1c1d21;
+  --color-fg-muted: #6b6f76;
+  --color-fg-subtle: #9a9ea5;
+
+  --color-accent: #5e6ad2;
+  --color-accent-hover: #4e59c4;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #eef0fd;
+
+  --color-banner-from: #6366f1;
+  --color-banner-to: #4338ca;
+  --color-banner-fg: #ffffff;
+
+  --color-danger: #e5484d;
+  --color-danger-fg: #ffffff;
+  --color-danger-soft: #fdeced;
+
+  --color-status-unassigned: #9a9ea5;
+  --color-status-planned: #5e6ad2;
+  --color-status-in-progress: #f2994a;
+  --color-status-testing: #17a2b8;
+  --color-status-completed: #4cb782;
+  --color-status-archived: #6b6f76;
+
+  --shadow-sm: 0 1px 2px rgba(16, 17, 20, 0.06);
+  --shadow-md: 0 4px 16px rgba(16, 17, 20, 0.1);
+  --shadow-lg: 0 12px 40px rgba(16, 17, 20, 0.16);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 120ms;
+  --duration-base: 200ms;
+
+  --kanban-dot: rgba(0, 0, 0, 0.08);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--color-bg);
+  --color-bg-inset: var(--color-bg-inset);
+  --color-surface: var(--color-surface);
+  --color-surface-hover: var(--color-surface-hover);
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-fg: var(--color-fg);
+  --color-fg-muted: var(--color-fg-muted);
+  --color-fg-subtle: var(--color-fg-subtle);
+
+  --color-accent: var(--color-accent);
+  --color-accent-hover: var(--color-accent-hover);
+  --color-accent-fg: var(--color-accent-fg);
+  --color-accent-soft: var(--color-accent-soft);
+
+  --color-banner-from: var(--color-banner-from);
+  --color-banner-to: var(--color-banner-to);
+  --color-banner-fg: var(--color-banner-fg);
+
+  --color-danger: var(--color-danger);
+  --color-danger-fg: var(--color-danger-fg);
+  --color-danger-soft: var(--color-danger-soft);
+
+  --color-status-unassigned: var(--color-status-unassigned);
+  --color-status-planned: var(--color-status-planned);
+  --color-status-in-progress: var(--color-status-in-progress);
+  --color-status-testing: var(--color-status-testing);
+  --color-status-completed: var(--color-status-completed);
+  --color-status-archived: var(--color-status-archived);
+
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-fg);
+  }
+
+  /* Tailwind v4 defaults the bare `border` utility to currentColor; give it
+     a sane default here so components don't need to spell out border-border
+     everywhere, without this out-competing more specific border-*-color
+     utilities (kept in the same cascade layer as those utilities). */
+  * {
+    border-color: var(--color-border);
+  }
+
+  /* Modern browsers default <button> to `cursor: default`, not `pointer` --
+     every clickable button in the app was relying on per-component
+     cursor-pointer classes, easy to forget and easy to miss in review. Set
+     it once, here, for every button (and role="button") in the app. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* Motion primitives shared across components. Keep transitions short and
+   easing consistent so the whole app feels like one system. */
+@layer utilities {
+  .animate-fade-in {
+    animation: fade-in var(--duration-base) var(--ease-out);
+  }
+  .animate-scale-in {
+    animation: scale-in var(--duration-base) var(--ease-out);
+  }
+  .animate-slide-up {
+    animation: slide-up var(--duration-base) var(--ease-out);
+  }
+  .bg-kanban-dots {
+    background-image: radial-gradient(var(--kanban-dot) 1.5px, transparent 1.5px);
+    background-size: 28px 28px;
+  }
+  .scrollbar-hide {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .fade-bottom {
+    -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent 100%);
+    mask-image: linear-gradient(to bottom, black calc(100% - 40px), transparent 100%);
+  }
+  .mention-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    vertical-align: middle;
+    border-radius: 0.25rem;
+    padding: 0.0625rem 0.375rem 0.0625rem 0.25rem;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .mention-chip:hover {
+    background: var(--color-accent-soft);
+    filter: brightness(0.97);
+  }
+  .mention-avatar {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 9999px;
+    object-fit: cover;
+    display: inline-block;
+  }
+  .animate-bell-ring {
+    animation: bell-ring 0.55s var(--ease-out);
+    transform-origin: top center;
+  }
+}
+
+@keyframes bell-ring {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  20% {
+    transform: rotate(-16deg) scale(1.15);
+  }
+  40% {
+    transform: rotate(13deg) scale(1.1);
+  }
+  60% {
+    transform: rotate(-8deg) scale(1.05);
+  }
+  80% {
+    transform: rotate(4deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Base UI popups/dialogs animate open and closed via data-state, driven
+   from CSS so every primitive gets the same feel with no per-component JS. */
+[data-state="open"].animate-in {
+  animation: scale-in var(--duration-base) var(--ease-out);
+}
+[data-state="closed"].animate-in {
+  animation: scale-in var(--duration-fast) var(--ease-out) reverse;
 }

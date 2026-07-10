@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# one-off Fider migration scratch data -- contains real user emails
+supabase/seed.fider-users.sql
 
 # vercel
 .vercel

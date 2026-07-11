@@ -17,9 +17,13 @@ function isVoteOnlyChange(payload: RealtimePostgresChangesPayload<Record<string,
   const oldRow = payload.old as Record<string, unknown>;
   const newRow = payload.new as Record<string, unknown>;
   if (!oldRow || Object.keys(oldRow).length === 0) return false; // no replica identity data to compare
-  return Object.keys(newRow).every(
-    (key) => IGNORED_ON_UPDATE.has(key) || oldRow[key] === newRow[key],
-  );
+  return Object.keys(newRow).every((key) => {
+    if (IGNORED_ON_UPDATE.has(key)) return true;
+    // body is jsonb -- Realtime delivers it as a parsed object, so two
+    // structurally-identical values are still different references and
+    // "===" always reports them as changed. Compare by value instead.
+    return JSON.stringify(oldRow[key]) === JSON.stringify(newRow[key]);
+  });
 }
 
 // Renders nothing. Keeps the board/kanban/roadmap lists in sync when anyone

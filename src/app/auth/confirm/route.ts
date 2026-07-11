@@ -1,6 +1,5 @@
 import type { EmailOtpType } from "@supabase/supabase-js";
-import type { NextRequest } from "next/server";
-import { redirect } from "next/navigation";
+import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 // `next` is attacker-controlled input (this route reads it straight off its
@@ -48,9 +47,15 @@ export async function GET(request: NextRequest) {
     const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error) {
-      redirect(next);
+      // NextResponse.redirect (not next/navigation's redirect) -- this is
+      // Supabase's own canonical pattern for this route. The cookies set
+      // above via createClient()'s cookieStore.set() need to land on the
+      // exact response object the browser receives; building that response
+      // explicitly here is the reliable way, rather than the throw-based
+      // redirect() mechanism racing with the cookie writes.
+      return NextResponse.redirect(new URL(next, request.url));
     }
   }
 
-  redirect("/?auth_error=1");
+  return NextResponse.redirect(new URL("/?auth_error=1", request.url));
 }

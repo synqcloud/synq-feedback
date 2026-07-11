@@ -31,6 +31,11 @@ export function UserProfileModal({
 
   React.useEffect(() => {
     if (!isOpen) return;
+    // Clear the previous user's data immediately so the fallback below
+    // (data?.profile ?? triggerProfile) uses the new triggerProfile while
+    // loading, instead of briefly showing the last-viewed user's name and
+    // avatar until this fetch resolves.
+    setData(null);
     let cancelled = false;
     getUserActivity(userId).then((result) => {
       if (!cancelled) {

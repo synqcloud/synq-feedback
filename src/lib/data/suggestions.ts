@@ -79,6 +79,13 @@ export async function getSuggestions({
 
   if (status) {
     query = query.eq("status", status);
+  } else {
+    // Matches Nolt/Canny-style boards: completed work lives on the roadmap
+    // (which always passes an explicit status, so it's unaffected by this),
+    // and archived is only findable via search or explicitly picking
+    // "Archived" from the status filter -- neither belongs in the default
+    // "all statuses" board view.
+    query = query.not("status", "in", "(completed,archived)");
   }
 
   if (search) {

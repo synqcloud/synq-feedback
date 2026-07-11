@@ -112,9 +112,14 @@ export async function toggleVote(suggestionId: string, hasVoted: boolean) {
     await supabase.from("votes").insert({ suggestion_id: suggestionId, user_id: userId });
   }
 
-  revalidatePath("/");
+  // Deliberately not revalidating "/" or "/roadmap" here: both sort by
+  // vote_count by default, so refreshing them mid-session would reorder the
+  // list out from under whoever just clicked, right as they clicked it. The
+  // optimistic count update already reflects the vote instantly; the real
+  // order catches up next time those pages load fresh (both already render
+  // dynamically per-request via getCurrentProfile()'s cookie read, so no
+  // extra revalidation is needed for that).
   revalidatePath(`/suggestions/${suggestionId}`);
-  revalidatePath("/roadmap");
   return { ok: true };
 }
 

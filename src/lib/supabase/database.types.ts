@@ -362,6 +362,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      subscriber_emails: {
+        Args: {
+          p_exclude_user_id: string
+          p_suggestion_id: string
+        }
+        Returns: {
+          email: string
+        }[]
+      }
     }
     Enums: {
       notification_type:

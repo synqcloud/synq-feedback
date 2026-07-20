@@ -19,11 +19,16 @@ export async function notifySubscribers({
   ctaText?: string;
 }) {
   const supabase = await createClient();
+  // Read subscribers through a SECURITY DEFINER function: the request-scoped
+  // client runs under the acting user's RLS context, and the subscriptions
+  // SELECT policy only exposes that user's own rows -- querying the table
+  // directly would return nobody else, collapsing every email to the admin
+  // copy. The function bypasses that restriction (see the migration).
   const [{ data: subscribers }, { data: settings }] = await Promise.all([
-    supabase
-      .from("subscriptions")
-      .select("user_id, profile:profiles(email)")
-      .eq("suggestion_id", suggestionId),
+    supabase.rpc("subscriber_emails", {
+      p_suggestion_id: suggestionId,
+      p_exclude_user_id: excludeUserId,
+    }),
     supabase.from("site_settings").select("name, admin_email").eq("id", 1).single(),
   ]);
 
@@ -31,9 +36,7 @@ export async function notifySubscribers({
   const siteName = settings?.name ?? "Feedback";
   const ctaUrl = `${siteUrl}/suggestions/${suggestionId}`;
 
-  const recipients = (subscribers ?? [])
-    .filter((row) => row.user_id !== excludeUserId && row.profile?.email)
-    .map((row) => row.profile!.email);
+  const recipients = (subscribers ?? []).map((row) => row.email);
 
   const html = renderEmailShell({ siteName, siteUrl, preheader, bodyHtml, ctaText, ctaUrl });
 

@@ -92,6 +92,10 @@ export const MentionNode = Node.create({
                 props: { items: props.items, command: props.command },
                 editor: props.editor,
               });
+              // @tiptap/suggestion's mount appends this element to document.body
+              // with an absolute position but no z-index, so it renders behind
+              // any open dialog (dialog.tsx panels sit at z-50). Lift it above.
+              (component.element as HTMLElement).style.zIndex = "60";
               unmount = props.mount(component.element as HTMLElement) ?? undefined;
             },
             onUpdate: (props) => {
